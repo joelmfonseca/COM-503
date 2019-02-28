@@ -170,6 +170,7 @@ def q4_generate_all_data():
 
 if __name__ == '__main__':
 
-    #q1_plot_variability(num_sim=100)
-    q3_doubling_access_points()
-    #q2_plot_response_values()
+    # q1_plot_variability(num_sim=100)
+    # q2_plot_response_values()
+    # q3_doubling_access_points()
+    q4_generate_all_data()
