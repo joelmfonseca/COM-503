@@ -101,8 +101,6 @@ def q2_plot_response_values():
     fig2, ax2 = plt.subplots(1, 1, figsize=(10,5))
     fig3, ax3 = plt.subplots(1, 1, figsize=(10,5))
    
-
-
     ax.plot(theta_data)
     ax1.plot(pps_data)
     ax2.plot(col_prob_data)
@@ -132,15 +130,46 @@ def q2_plot_response_values():
     plt.tight_layout()
     fig3.savefig('delay.png')
 
+def q3_doubling_servers(power=4):
+    '''Plot the effect of doubling the number of servers only.'''
 
+    data = []
+    for i in tqdm(range(1,1001)):
+        servers_data = []
+        for j in range(power):
+            servers_data.append(get_values(i,1,2**j)[0])
+        data.append(servers_data)
+
+    data = np.array(data)
+
+    fig, ax = plt.subplots(1, 1, figsize=(10,5))
+    for i in range(power):
+        ax.plot(data[:,i], label='S={}'.format(2**i))
     
+    plt.legend()
+    plt.xlabel('Number of requests per second')
+    plt.ylabel('Theta')
+    plt.tight_layout()
+    fig.savefig('q3_doubling_s.png')
 
+def q4_generate_all_data():
+    '''Generate all data for once.'''
 
+    data = []
+    for i in tqdm(range(1,1001)):
+        access_points = []
+        for j in tqdm(range(1,11)):
+            servers = []
+            for k in tqdm(range(1,11)):
+                servers.append(get_values(i,j,k)[0])
+            access_points.append(servers)
+        data.append(access_points)
 
+    data = np.array(data)
+    np.save('data.npy', data)
 
 if __name__ == '__main__':
 
     #q1_plot_variability(num_sim=100)
     q3_doubling_access_points()
     #q2_plot_response_values()
-
