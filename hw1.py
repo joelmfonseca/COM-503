@@ -22,9 +22,7 @@ def get_values(clients, apoints, servers, sciper=217575):
 
 def q1_plot_variability(num_sim):
     '''Plot variability of output parameters for same input configuration.'''
-
-
-
+    
     list_theta = []
     list_pps = []
     list_prob = []
@@ -168,9 +166,91 @@ def q4_generate_all_data():
     data = np.array(data)
     np.save('data.npy', data)
 
+def q4_plot_ap_s(data, access_points, servers):
+    '''Plot the configuration passed by argument.'''
+
+    fig, ax = plt.subplots(1, 1, figsize=(10,5))
+    for ap in access_points:
+        for s in servers:
+            ax.plot(data[:, ap-1, s-1], label='AP={}'.format(ap))
+    
+    plt.legend()
+    plt.xlabel('Number of requests per second')
+    plt.ylabel('Theta')
+    plt.xticks(np.linspace(0,1000,21))
+    plt.axvline(x=130, linestyle='--', color='b')
+    plt.text(125, 1, 'C=130', ha='right', va='bottom',rotation='vertical', color='b')
+    plt.axvline(x=260, linestyle='--', color='b')
+    plt.text(255, 1, 'C=260', ha='right', va='bottom',rotation='vertical', color='b')
+    plt.axvline(x=390, linestyle='--', color='b')
+    plt.text(390, 1, 'C=390', ha='right', va='bottom',rotation='vertical', color='b')
+    plt.axvline(x=520, linestyle='--', color='b')
+    plt.text(520, 1, 'C=520', ha='right', va='bottom',rotation='vertical', color='b')
+    # plt.axvline(x=290, linestyle='--', color='r')
+    # plt.text(290, 1, 'C=290', ha='right', va='bottom',rotation='vertical', color='r')
+    plt.axvline(x=580, linestyle='--', color='r')
+    plt.text(580, 1, 'C=580', ha='right', va='bottom',rotation='vertical', color='r')
+    plt.grid()
+    plt.tight_layout()
+    fig.savefig('q4_analysis_s=2.png')
+
+def q4_generete_engineering_rule(num_sim):
+    '''Tentative of linear throughput.'''
+
+    er_data_sim = []
+    for n in tqdm(range(num_sim)):
+        ap=1
+        s=1
+        er_data = []
+        for i in range(1,1001):
+            if i%130 == 0:
+                ap += 1
+                # print('c={}, ap={}, s={}'.format(i, ap, s))
+            if i%290 == 0:
+                s += 1
+                # print('c={}, ap={}, s={}'.format(i, ap, s))
+            er_data.append(get_values(i,ap,s)[0])
+        er_data_sim.append(er_data)
+    
+    er_data_sim = np.array(er_data_sim)
+    np.save('er_data_sim.npy', er_data_sim)
+
+def q4_brute_force(num_sim):
+    '''Get data with max settings.'''
+    er_data_sim = []
+    for n in tqdm(range(num_sim)):
+        er_data = []
+        for i in range(1,1001):
+            er_data.append(get_values(i,10,10)[0])
+        er_data_sim.append(er_data)
+    
+    er_data_sim = np.array(er_data_sim)
+    np.save('er_brute_force.npy', er_data_sim)
+
+def q4_plot(er_data_sim):
+    'Plot the engineering rule simulations.'
+
+    fig, ax = plt.subplots(1, 1, figsize=(10,5))
+    mean = np.mean(er_data_sim, axis=0)
+    std = np.std(er_data_sim, axis=0)
+    ax.plot(mean)
+    # ax.plot(np.arange(1,1001), np.arange(1,1001), color='g', alpha=0.7)
+    ax.fill_between(np.arange(1,1001), mean+std, mean-std, alpha=0.5)
+    plt.xlabel('Number of requests per second')
+    plt.ylabel('Theta')
+    plt.grid()
+    plt.tight_layout()
+    fig.savefig('q4_engineering_rule.png')
+
 if __name__ == '__main__':
 
     # q1_plot_variability(num_sim=100)
     # q2_plot_response_values()
     # q3_doubling_access_points()
-    q4_generate_all_data()
+    # data = np.load('data.npy')
+    # q4_plot_ap_s(data=data, access_points=list(range(1,11)), servers=[2])
+    # q4_plot_ap_s(data=data, access_points=[1], servers=list(range(1,11)))
+    # q4_engineering_rule(num_sim=100)
+    q4_plot(np.load('er_data_sim.npy'))
+    # q4_brute_force(10)
+    # q4_plot(np.load('er_brute_force.npy'))
