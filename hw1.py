@@ -51,28 +51,20 @@ def q1_plot_variability(num_sim):
     plt.tight_layout()
     fig.savefig('q1_variability.png')
 
-def q3_doubling_access_points(power=4):
+def q3_doubling_access_points(data, access_points=[1,2,4,8]):
     '''Plot the effect of doubling the number of access points only.'''
 
-    data = []
-    for i in tqdm(range(1,1001)):
-        access_points_data = []
-        for j in range(power):
-            access_points_data.append(get_values(i,1*2**j,1)[0])
-        data.append(access_points_data)
-
-    data = np.array(data)
-
     fig, ax = plt.subplots(1, 1, figsize=(10,5))
-    for i in range(power):
-        ax.plot(data[:,i], label='AP={}'.format(2**i))
+    for ap in access_points:
+        ax.plot(data[:,ap-1,0], label='AP={}'.format(ap))
     
     plt.legend()
+    plt.xticks(np.linspace(0,1000,21))
     plt.xlabel('Number of requests per second')
     plt.ylabel('Theta')
+    plt.grid()
     plt.tight_layout()
     fig.savefig('q3_doubling_ap.png')
-
 
 def q2_plot_response_values():
 
@@ -246,11 +238,11 @@ if __name__ == '__main__':
 
     # q1_plot_variability(num_sim=100)
     # q2_plot_response_values()
-    # q3_doubling_access_points()
-    # data = np.load('data.npy')
+    data = np.load('data.npy')
+    q3_doubling_access_points(data)
     # q4_plot_ap_s(data=data, access_points=list(range(1,11)), servers=[2])
     # q4_plot_ap_s(data=data, access_points=[1], servers=list(range(1,11)))
     # q4_engineering_rule(num_sim=100)
-    q4_plot(np.load('er_data_sim.npy'))
+    # q4_plot(np.load('er_data_sim.npy'))
     # q4_brute_force(10)
     # q4_plot(np.load('er_brute_force.npy'))
