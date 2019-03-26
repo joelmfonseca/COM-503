@@ -6,7 +6,7 @@ import pprint
 from job_scheduler import JobScheduler
 
 def debug(string):
-    if True:
+    if False:
         pprint.pprint(string)
 
 class Server():
@@ -35,34 +35,22 @@ class Server():
 
     def process_buffer(self):
 
-        def process_buffer_single_job(buffer_single_job):
+        def process_buffer_single_job(buffer):
 
-            # # merge values with same key
-            # buffer_dict = {}
-            # for time, e in buffer_single_job:
-            #     if time in buffer_dict.keys():
-            #         buffer_dict[time].append(e)
-            #     else:
-            #         buffer_dict[time] = [e]
-            
-            # for key, value in buffer_dict.items():
-            #     buffer_dict[key] = sum(value) 
-            # l = list(buffer_dict.items())
-
-            l = buffer_single_job
             # sort entries
-            l.sort(key=lambda t: t[0])
+            buffer.sort(key=lambda t: t[0])
 
             # convert value to cumulative sum
             cum_sum = 0
-            for i in range(len(l)):
-                cum_sum += l[i][1]
-                l[i] = (l[i][0], cum_sum)
+            for i in range(len(buffer)):
+                cum_sum += buffer[i][1]
+                buffer[i] = (buffer[i][0], cum_sum)
 
-            return l
+            return buffer
 
         def extract_buffer_single_job(buffer):
 
+            # split buffer from job types
             buffer_info_t1 = []
             buffer_info_t2 = []
             for job_type, time, e in buffer:
@@ -73,11 +61,7 @@ class Server():
 
             return buffer_info_t1, buffer_info_t2
 
-        debug('raw buffer: {}'.format(self.buffer))
-
         buffer_info_t1, buffer_info_t2 = extract_buffer_single_job(self.buffer)
-
-        debug('extracted buffer t1: {}'.format(buffer_info_t1))
 
         buffer_info_t1 = process_buffer_single_job(buffer_info_t1)
         buffer_info_t2 = process_buffer_single_job(buffer_info_t2)
@@ -88,54 +72,78 @@ class Server():
         num_job_arrived = 0
         num_job_served = 0
         arrival_time = 0
-        last_end_waiting_time = 0
+        last_end_service_time = 0
         while num_job_arrived < self.max_req or self.job_scheduler.is_not_empty():
 
             if num_job_arrived < self.max_req:
 
                 # create new job
                 arrival_time = arrival_time + np.random.exponential(scale=1/self.arrival_rate)
-                # debug('arrival time: {:.3f}, last end waiting time: {:.3f}' \
-                #     .format(arrival_time, last_end_waiting_time))
 
-                # end_waiting_time = max(arrival_time, last_end_waiting_time)
-                # last_end_waiting_time = end_waiting_time
-
+                # add new job to job scheduler and buffer
                 self.job_scheduler.add_job(1, arrival_time)
                 self.update_buffer(1, arrival_time, 'add')
+
+                # keep track of the number of jobs arrived
                 num_job_arrived += 1
                 self.history_num_job_arrived.append((arrival_time, num_job_arrived))
 
-            # pop job from scheduler
-            curr_type_job, curr_time = self.job_scheduler.next()
-            # debug('current type job: {}, current_time: {:.3f}'.format(curr_type_job, curr_time))
+            # get the next job from the job scheduler
+            curr_type_job, service_time = self.job_scheduler.next()
+            
+            # debug
+            debug('arrival time: {:.3f}, current type job: {}, service_time: {:.3f}'\
+                .format(arrival_time, curr_type_job, service_time))
             
             if curr_type_job == 1:
-                # debug('*1')
-                self.update_buffer(1, curr_time, 'delete')
-                end_service_time_t1 = curr_time + self.gen_service_duration_t1()
+
+                # make sure there is no other job going on
+                service_time = max(service_time, last_end_service_time)
+                self.update_buffer(1, service_time, 'delete')
+                
+                # compute end of service time for type 1 job
+                end_service_time_t1 = service_time + self.gen_service_duration_t1()
+                
+                # update buffer & job scheduler
                 self.update_buffer(2, end_service_time_t1, 'add')
+                self.job_scheduler.add_job(2, last_end_service_time)
 
-                end_waiting_time = max(end_service_time_t1, last_end_waiting_time)
-                self.job_scheduler.add_job(2, end_waiting_time)
+                # debug
+                debug('1) end service time t1: {:.3f}, last end service time: {:.3f}' \
+                    .format(end_service_time_t1, last_end_service_time))
 
-                last_end_waiting_time = end_waiting_time
-                # debug('end service time t1: {:.3f}, last end waiting time: {:.3f}' \
-                #     .format(end_service_time_t1, last_end_waiting_time))
+                # update
+                last_end_service_time = end_service_time_t1
 
             elif curr_type_job == 2:
-                # debug('*2')
-                self.update_buffer(2, curr_time, 'delete')
-                end_service_time_t2 = curr_time + self.gen_service_duration_t2()
-                last_end_waiting_time = max(end_service_time_t2, last_end_waiting_time)
-                # debug('end service time t2: {:.3f}, last end waiting time: {:.3f}' \
-                #     .format(end_service_time_t2, last_end_waiting_time))
+
+                # make sure there is no other job going on
+                service_time = max(service_time, last_end_service_time)
+                self.update_buffer(2, service_time, 'delete')
+
+                # compute end of service time for type 2 job
+                end_service_time_t2 = service_time + self.gen_service_duration_t2()
+
+                # debug
+                debug('2) end service time t2: {:.3f}, last end service time: {:.3f}' \
+                    .format(end_service_time_t2, last_end_service_time))
+
+                # update
+                last_end_service_time = end_service_time_t2
+
+                # keep track of the number of jobs served
                 num_job_served += 1
                 self.history_num_job_served.append((end_service_time_t2, num_job_served))
-            # debug('-------')
-            # debug(self.buffer)
-            # debug(self.job_scheduler.job_schedule)
-            # debug('=======')
+            
+                # debug
+                debug('2) end service time t2: {:.3f}, last end service time: {:.3f}' \
+                    .format(end_service_time_t2, last_end_service_time))
+        
+            # debug
+            debug('-------')
+            debug(self.buffer)
+            debug(self.job_scheduler.job_schedule)
+            debug('=======')
 
         buffer_info_t1, buffer_info_t2 = self.process_buffer()
 
