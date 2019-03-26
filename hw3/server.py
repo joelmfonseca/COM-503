@@ -73,6 +73,8 @@ class Server():
         num_job_served = 0
         arrival_time = 0
         last_end_service_time = 0
+        response_time_t1 = []
+        response_time_t2 = []
         while num_job_arrived < self.max_req or self.job_scheduler.is_not_empty():
 
             if num_job_arrived < self.max_req:
@@ -97,6 +99,9 @@ class Server():
             
             if curr_type_job == 1:
 
+                # retrieve arrival time
+                arrival_time_t1 = service_time
+
                 # make sure there is no other job going on
                 service_time = max(service_time, last_end_service_time)
                 self.update_buffer(1, service_time, 'delete')
@@ -106,7 +111,7 @@ class Server():
                 
                 # update buffer & job scheduler
                 self.update_buffer(2, end_service_time_t1, 'add')
-                self.job_scheduler.add_job(2, last_end_service_time)
+                self.job_scheduler.add_job(2, end_service_time_t1)
 
                 # debug
                 debug('1) end service time t1: {:.3f}, last end service time: {:.3f}' \
@@ -115,7 +120,13 @@ class Server():
                 # update
                 last_end_service_time = end_service_time_t1
 
+                # add corresponding response time
+                response_time_t1.append(end_service_time_t1-arrival_time_t1)
+
             elif curr_type_job == 2:
+
+                # retrieve arrival time
+                arrival_time_t2 = service_time
 
                 # make sure there is no other job going on
                 service_time = max(service_time, last_end_service_time)
@@ -135,9 +146,8 @@ class Server():
                 num_job_served += 1
                 self.history_num_job_served.append((end_service_time_t2, num_job_served))
             
-                # debug
-                debug('2) end service time t2: {:.3f}, last end service time: {:.3f}' \
-                    .format(end_service_time_t2, last_end_service_time))
+                # add correspoding response time
+                response_time_t2.append(end_service_time_t2-arrival_time_t2)
         
             # debug
             debug('-------')
@@ -148,5 +158,5 @@ class Server():
         buffer_info_t1, buffer_info_t2 = self.process_buffer()
 
         return self.history_num_job_arrived, self.history_num_job_served, \
-            buffer_info_t1, buffer_info_t2
+            buffer_info_t1, buffer_info_t2, np.mean(response_time_t1), np.mean(response_time_t2)
 
