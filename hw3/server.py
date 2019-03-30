@@ -53,20 +53,23 @@ class Server():
             # split buffer from job types
             buffer_info_t1 = []
             buffer_info_t2 = []
+            buffer_info = []
             for job_type, time, e in buffer:
                 if job_type == 1:
                     buffer_info_t1.append((time, e))
                 elif job_type == 2:
                     buffer_info_t2.append((time, e))
+                buffer_info.append((time, e))
 
-            return buffer_info_t1, buffer_info_t2
+            return buffer_info_t1, buffer_info_t2, buffer_info
 
-        buffer_info_t1, buffer_info_t2 = extract_buffer_single_job(self.buffer)
+        buffer_info_t1, buffer_info_t2, buffer_info = extract_buffer_single_job(self.buffer)
 
         buffer_info_t1 = process_buffer_single_job(buffer_info_t1)
         buffer_info_t2 = process_buffer_single_job(buffer_info_t2)
+        buffer_info = process_buffer_single_job(buffer_info)
 
-        return buffer_info_t1, buffer_info_t2
+        return buffer_info_t1, buffer_info_t2, buffer_info
 
     def run(self):
         num_job_arrived = 0
@@ -155,8 +158,8 @@ class Server():
             debug(self.job_scheduler.job_schedule)
             debug('=======')
 
-        buffer_info_t1, buffer_info_t2 = self.process_buffer()
+        buffer_info_t1, buffer_info_t2, buffer_info = self.process_buffer()
 
         return self.history_num_job_arrived, self.history_num_job_served, \
-            buffer_info_t1, buffer_info_t2, np.mean(response_time_t1), np.mean(response_time_t2)
+            buffer_info_t1, buffer_info_t2, buffer_info, np.mean(response_time_t1), np.mean(response_time_t2)
 
