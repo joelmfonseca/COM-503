@@ -21,6 +21,9 @@ class Server():
         self.history_num_job_arrived = []
         self.history_num_job_served = []
 
+        self.response_time_t1 = []
+        self.response_time_t2 = []
+
     def gen_service_duration_t1(self):
         return np.random.lognormal(mean=1.5, sigma=0.6)
 
@@ -76,8 +79,7 @@ class Server():
         num_job_served = 0
         arrival_time = 0
         last_end_service_time = 0
-        response_time_t1 = []
-        response_time_t2 = []
+
         while num_job_arrived < self.max_req or self.job_scheduler.is_not_empty():
 
             if num_job_arrived < self.max_req:
@@ -124,7 +126,7 @@ class Server():
                 last_end_service_time = end_service_time_t1
 
                 # add corresponding response time
-                response_time_t1.append(end_service_time_t1-arrival_time_t1)
+                self.response_time_t1.append(end_service_time_t1-arrival_time_t1)
 
             elif curr_type_job == 2:
 
@@ -150,7 +152,7 @@ class Server():
                 self.history_num_job_served.append((end_service_time_t2, num_job_served))
             
                 # add correspoding response time
-                response_time_t2.append(end_service_time_t2-arrival_time_t2)
+                self.response_time_t2.append(end_service_time_t2-arrival_time_t2)
         
             # debug
             debug('-------')
@@ -161,5 +163,5 @@ class Server():
         buffer_info_t1, buffer_info_t2, buffer_info = self.process_buffer()
 
         return self.history_num_job_arrived, self.history_num_job_served, \
-            buffer_info_t1, buffer_info_t2, buffer_info, np.mean(response_time_t1), np.mean(response_time_t2)
+            buffer_info_t1, buffer_info_t2, buffer_info, np.mean(self.response_time_t1), np.mean(self.response_time_t2)
 
