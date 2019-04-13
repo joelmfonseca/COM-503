@@ -1,6 +1,6 @@
 .DS_Store
 .ipynb_checkpoints
-*/__pycache__/
+**/__pycache__/
 
 hw4/lstm/saved_models/*
 !hw4/lstm/saved_models/lstm_adam_b10_lb168_model
