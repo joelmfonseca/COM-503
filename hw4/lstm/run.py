@@ -64,26 +64,31 @@ if train:
 
 # get just one sample for prediction
 data_pred, target_pred = next(iter(test_loader))
-#print('data_pred shape: {}, target_pred shape: {}'.format(data_pred.shape, target_pred.shape))
 
 # prepare data for comparison
 pred = model.predict(Variable(data_pred), look_ahead)
 target_scaled = scaler.inverse_transform(target_pred[0,:].detach().view(-1, 1).numpy())
 pred_scaled = scaler.inverse_transform(pred[0,:].detach().view(-1, 1).numpy())
 
-# plot prediction
-plot_prediction(target_scaled, pred_scaled)
-
 # compute MSE and MAE
+train_loader, test_loader, scaler = build_loader(test_ratio, look_back, look_ahead, batch_size=1)
+
 mse_losses = []
 mae_losses = []
+residuals = []
 for data, target in train_loader:
-    mse_loss, mae_loss = model.step(data, target, predict=True, scaler=scaler)
+    mse_loss, mae_loss, resid = model.step(data, target, predict=True, scaler=scaler)
     mse_losses.append(mse_loss)
     mae_losses.append(mae_loss)
+    residuals.append(resid)
 
 mse_train = np.mean(mse_losses)
 mae_train = np.mean(mae_losses)
 
 print('Train (log): MSE={:.3f}, MAE={:.3f}'.format(mse_train, mae_train))
 print('Test:        MSE={:.3f}, MAE={:.3f}'.format(mean_squared_error(pred_scaled, target_scaled), mean_absolute_error(pred_scaled, target_scaled)))
+
+# plot prediction
+residuals_scaled = scaler.inverse_transform(np.array(residuals).reshape(-1,1)).squeeze()
+#plot_prediction(target_scaled, pred_scaled, residuals_scaled) does not show the residuals correctly
+plot_prediction(target_pred.detach().view(-1,1).numpy(), pred.detach().view(-1,1).numpy(), residuals)

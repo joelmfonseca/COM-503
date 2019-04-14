@@ -44,8 +44,9 @@ class LSTM(nn.Module):
             output = self.forward(input)
             mse_loss = self.criterion(output, target)
             mae_loss = self.criterion_report(output, target)
+            resid = target - output
 
-            return mse_loss.data.item(), mae_loss.data.item()
+            return mse_loss.data.item(), mae_loss.data.item(), resid.data.item()
 
     def predict(self, input, look_ahead):
         self.eval()
