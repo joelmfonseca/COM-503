@@ -85,8 +85,8 @@ for data, target in train_loader:
 mse_train = np.mean(mse_losses)
 mae_train = np.mean(mae_losses)
 
-print('Train (log): MSE={:.3f}, MAE={:.3f}'.format(mse_train, mae_train))
-print('Test:        MSE={:.3f}, MAE={:.3f}'.format(mean_squared_error(pred_scaled, target_scaled), mean_absolute_error(pred_scaled, target_scaled)))
+print('Train (log): RMSE={:.3f}, MAE={:.3f}'.format(np.sqrt(mse_train), mae_train))
+print('Test:        RMSE={:.3f}, MAE={:.3f}'.format(np.sqrt(mean_squared_error(pred_scaled, target_scaled)), mean_absolute_error(pred_scaled, target_scaled)))
 
 # plot prediction
 residuals_scaled = scaler.inverse_transform(np.array(residuals).reshape(-1,1)).squeeze()
