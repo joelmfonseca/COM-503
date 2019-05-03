@@ -4,3 +4,5 @@
 
 hw4/lstm/saved_models/*
 !hw4/lstm/saved_models/lstm_adam_b10_lb168_model
+
+mini_project/data/*
