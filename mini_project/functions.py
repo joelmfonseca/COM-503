@@ -84,7 +84,7 @@ def compute_regs(df, mask, X_train, y_train, X_test, approach, show_coef):
             df.loc[mask, num_coef_col] = model.coef_.reshape(1,-1).shape[1]
         
         if show_coef:
-            print('Coef. for {} {} model: {}'.format(approach, name, model.coef_))
+            print('{} {} model coef.: {}, bias: {}'.format(approach, name, model.coef_, model.intercept_))
                 
     return models
 
