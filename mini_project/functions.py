@@ -1,24 +1,21 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import datetime
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, mean_squared_error
-from sklearn import decomposition
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-import array
-from tqdm import tqdm_notebook as tqdm
-from math import pi
 import random
 random.seed(2019)
 from random import sample
 
-# main variables
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, mean_squared_error
+from sklearn import decomposition
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+
+# K values for K-means
 K_cluster_altitude = 10
 K_cluster_wind = 8
 
 def plot_elbow_method(df, search_space=range(2,11)):
-   
     X = df.values
     kmeans = [KMeans(i) for i in search_space]
     scores = [kmeans[i].fit(X).inertia_ for i in range(len(kmeans))]
@@ -71,7 +68,6 @@ def plot_faulty_sensor(df, sensor):
 ######################### Performance Evaluation ##############################
 
 def compute_regs(df, mask, X_train, y_train, X_test, approach, show_coef):
-    
     models = {'LinearRegression':LinearRegression(), 'Lasso':Lasso(),
               'Ridge':Ridge(), 'ElasticNet':ElasticNet()}
     
@@ -92,11 +88,9 @@ def compute_regs(df, mask, X_train, y_train, X_test, approach, show_coef):
                 
     return models
 
-
 ######################### Regressions ##############################
 
 def naive_regression(df, faulty_sensors, show_coef=False, failure_date=24):
-    
     features = ['temperature','humidity']
     target = ['CO2']
     for sensor in faulty_sensors:
@@ -114,7 +108,6 @@ def naive_regression(df, faulty_sensors, show_coef=False, failure_date=24):
         compute_ci(df, train_mask, res_mask, 'naive', 'LinearRegression')
 
 def za_regression(df, df_altitude, df_metadata, faulty_sensors, show_coef=False, failure_date=24):
-    
     features = ['temperature', 'humidity']
     print('Print support sensors (from zone and altitude clustering) for each faulty sensor:\n')
     for sensor in faulty_sensors:
@@ -158,7 +151,7 @@ def wt_regression(df, df_altitude, df_metadata, faulty_sensors, show_coef=False,
         # create a model for each wind cluster
         df_for_reg_models = df[(df['LocationName'].isin(sensors)) & (~df['LocationName'].isin(faulty_sensors))]
         if df_for_reg_models.shape[0] == 0:
-            df_for_reg_models = df[(df['LocationName'].isin(sensors))]# & (df.index.day < failure_date)]
+            df_for_reg_models = df[(df['LocationName'].isin(sensors))]
         
         models_lr = []
         models_lasso = []
@@ -179,8 +172,7 @@ def wt_regression(df, df_altitude, df_metadata, faulty_sensors, show_coef=False,
             models_lasso.append(m['Lasso'])
             models_ridge.append(m['Ridge'])
             models_elastic_net.append(m['ElasticNet'])
-            
-        #print('--')
+        
         sensor_data = df[df['LocationName'] == sensor]
         for cluster_id in sensor_data['wind_cluster'].unique().tolist():
             mask = (df['LocationName'] == sensor) & (df['wind_cluster'] == cluster_id)
@@ -196,12 +188,6 @@ def wt_regression(df, df_altitude, df_metadata, faulty_sensors, show_coef=False,
             df.loc[mask, 'wt_Lasso_num_coef'] = models_lasso[cluster_id].coef_.reshape(1,-1).shape[1]
             df.loc[mask, 'wt_Ridge_num_coef'] = models_ridge[cluster_id].coef_.reshape(1,-1).shape[1]
             df.loc[mask, 'wt_ElasticNet_num_coef'] = models_elastic_net[cluster_id].coef_.reshape(1,-1).shape[1]
-
-            #print(reg.coef_)
-            # aic['wt'] = {'LinearRegression_prediction': reg.coef_.shape[1],
-            #              'Lasso_prediction': reg_lasso.coef_.reshape(1,-1).shape[1],
-            #              'Ridge_prediction':  reg_ridge.coef_.reshape(1,-1).shape[1],
-            #              'ElasticNet_prediction':  reg_elastic.coef_.reshape(1,-1).shape[1]}
             
         train_mask = (df['LocationName'] == sensor) & (df.index.day < failure_date)
         res_mask = (df['LocationName'] == sensor) & (df.index.day >= failure_date)
@@ -211,7 +197,6 @@ def wt_regression(df, df_altitude, df_metadata, faulty_sensors, show_coef=False,
     print('Done.')
 
 def brute_force(df, faulty_sensors, show_coef=False, failure_date=24):
-    
     correct_sensors_mask = (~df['LocationName'].isin(faulty_sensors)) | \
                             (df['LocationName'].isin(faulty_sensors) & (df.index.day < 24))
     features = ['temperature', 'humidity', 'altitude', 'wind_speed']
@@ -252,15 +237,12 @@ def compute_ci(df, train_mask, res_mask, approach, reg):
 ######################### Criterions and Metric ##############################
 
 def compute_AIC(y, y_pred, k):
-    
     resid  = np.sum((y-y_pred)**2) 
     return -2*np.log(resid) + 2*k
 
 def compute_BIC(y, y_pred, k):
-    
     n = len(y_pred)
     resid  = np.sum((y-y_pred)**2) 
-    
     return n*np.log(resid/n) + k*np.log(n)
 
 def print_criterions(df, sensors, approaches, regs, failure_date=24):
@@ -327,6 +309,7 @@ def plot_zoomed_prediction(df, sensor, prediction, reg, name=None, ci=False, cor
         lower_bounds = df[mask]['{}_{}_lower_bound'.format(prediction, reg)]
         upper_bounds = df[mask]['{}_{}_upper_bound'.format(prediction, reg)]
         p2 = ax.fill_between(x, lower_bounds, upper_bounds, color='r', alpha=0.2, label='95% level')
+    
     #plt.title('Prediction using {} {} approach for {} sensor (zoomed)'.format(prediction, reg, sensor))
     plt.xlabel('Date')
     if correct_xticks:
@@ -340,6 +323,7 @@ def plot_zoomed_prediction(df, sensor, prediction, reg, name=None, ci=False, cor
                 label += f'\nNov\n2017'
             return label
         ax.set_xticklabels(map(lambda x: line_format(x), ['24', '25', '26', '27', '28', '29', '30', '31', '01']), ha='center', rotation=0)
+    
     plt.ylabel('CO2 [ppm]')
     plt.legend(['true measurement', '{} prediction'.format(prediction), '95% ci'])
     if name is not None:
